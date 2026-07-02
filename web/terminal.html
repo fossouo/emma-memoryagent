@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Emma MemoryAgent — Under the Hood</title>
+<style>
+  body {
+    margin: 0;
+    background: #0b0f14;
+    color: #e6edf3;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 30px;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #9aa7b3; font-size: 13px; margin-bottom: 20px; }
+  .term {
+    background: #0d1117;
+    border: 1px solid #23303f;
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin-bottom: 20px;
+  }
+  .term .cmd { color: #34d399; }
+  .term .cmd::before { content: "$ "; color: #4f8cff; }
+  .term pre { margin: 10px 0 0; white-space: pre-wrap; color: #cdd6e0; }
+  .hl-key { color: #a78bfa; }
+  .hl-str { color: #fbbf24; }
+  .code {
+    background: #0d1117;
+    border: 1px solid #23303f;
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cdd6e0;
+    overflow-x: auto;
+  }
+  .code .file { color: #9aa7b3; font-size: 12px; margin-bottom: 10px; }
+  .code .kw { color: #f472b6; }
+  .code .fn { color: #4f8cff; }
+  .code .str { color: #fbbf24; }
+  .code .cm { color: #6b7a8a; font-style: italic; }
+</style>
+</head>
+<body>
+<h1>Under the hood — real request, real response, real code</h1>
+<div class="sub">No mockups: this is an actual curl call against the running backend, and the actual retrieval logic that produced it.</div>
+
+<div class="term">
+  <div class="cmd">curl -X POST http://.../chat -d '{"child_id":"emma-demo","message":"Can you give me another one?"}'</div>
+  <pre>{
+  "reply": "Absolutely! 🦕 Let's keep exploring fractions—with a dinosaur twist! ...",
+  <span class="hl-key">"retrieved_topic"</span>: <span class="hl-str">"fractions"</span>,
+  <span class="hl-key">"retrieved_status"</span>: <span class="hl-str">"started"</span>,
+  <span class="hl-key">"context_topics_sent"</span>: [<span class="hl-str">"fractions"</span>],
+  <span class="hl-key">"preferences_used"</span>: {
+    <span class="hl-key">"interests"</span>: [<span class="hl-str">"dinosaurs"</span>],
+    <span class="hl-key">"struggles_with"</span>: [<span class="hl-str">"visual fractions"</span>]
+  }
+}</pre>
+</div>
+
+<div class="code">
+  <div class="file">src/main.py — the actual retrieval + adaptation logic</div>
+<pre><span class="kw">if not</span> target_topic:
+    recent = memory.most_recent_topic()
+    <span class="kw">if</span> recent:
+        target_topic = recent
+        retrieved_topic = recent  <span class="cm"># surfaced to the UI, not hidden</span>
+
+<span class="cm"># preferences are formatted into an explicit instruction —</span>
+<span class="cm"># not just dumped as data for the model to maybe notice</span>
+<span class="kw">def</span> <span class="fn">_format_preferences_instruction</span>(preferences):
+    interests = preferences.get(<span class="str">"interests"</span>, [])
+    struggles = preferences.get(<span class="str">"struggles_with"</span>, [])
+    <span class="kw">if</span> interests:
+        <span class="cm"># "weave in UNPROMPTED" — this is what makes the</span>
+        <span class="cm"># dinosaur example happen without being asked</span>
+        ...
+</pre>
+</div>
+</body>
+</html>

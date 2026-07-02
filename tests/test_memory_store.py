@@ -54,3 +54,23 @@ def test_record_praise_is_idempotent():
     memory_store.record_praise("child-6", "finished the quiz")
     memory = memory_store.load("child-6")
     assert memory.praise_log.count("finished the quiz") == 1
+
+
+def test_skill_and_support_style_persist():
+    memory_store.record_topic_covered(
+        "child-7", "fractions", skill="adding same-denominator fractions", support_style="hints_not_answers"
+    )
+    memory = memory_store.load("child-7")
+    assert memory.topics["fractions"]["skill"] == "adding same-denominator fractions"
+    assert memory.topics["fractions"]["support_style"] == "hints_not_answers"
+
+
+def test_skill_and_support_style_carry_forward_when_not_repeated():
+    memory_store.record_topic_covered(
+        "child-8", "fractions", skill="adding same-denominator fractions", support_style="hints_not_answers"
+    )
+    memory_store.record_topic_covered("child-8", "fractions")
+    memory = memory_store.load("child-8")
+    assert memory.topics["fractions"]["skill"] == "adding same-denominator fractions"
+    assert memory.topics["fractions"]["support_style"] == "hints_not_answers"
+    assert memory.topics["fractions"]["status"] == "practicing"

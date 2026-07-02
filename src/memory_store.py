@@ -121,23 +121,46 @@ def save(memory: ChildMemory) -> None:
         conn.close()
 
 
-def record_topic_covered(child_id: str, topic: str) -> ChildMemory:
+def record_topic_covered(
+    child_id: str,
+    topic: str,
+    skill: str | None = None,
+    support_style: str | None = None,
+) -> ChildMemory:
     """Write or update structured learning state for a topic.
 
     First time: status="started". Each subsequent turn on the same topic
     advances status one step (started -> practicing -> mastered) — this is
     the "memory update over time" behavior, not just an append-only log.
+
+    skill/support_style capture *how* this child is being taught the topic
+    (e.g. skill="adding same-denominator fractions",
+    support_style="hints_not_answers" for homework help that guides instead
+    of giving the answer away) — this is what makes the stored state a
+    learning profile, not just a topic tag.
     """
     memory = load(child_id)
     now = time.time()
     key = topic.lower()
     existing = memory.topics.get(key)
     if existing is None:
-        memory.topics[key] = {"status": "started", "first_seen": now, "last_seen": now}
+        memory.topics[key] = {
+            "status": "started",
+            "first_seen": now,
+            "last_seen": now,
+            "skill": skill,
+            "support_style": support_style,
+        }
     else:
         idx = STATUS_PROGRESSION.index(existing["status"])
         new_status = STATUS_PROGRESSION[min(idx + 1, len(STATUS_PROGRESSION) - 1)]
-        memory.topics[key] = {**existing, "status": new_status, "last_seen": now}
+        memory.topics[key] = {
+            **existing,
+            "status": new_status,
+            "last_seen": now,
+            "skill": skill or existing.get("skill"),
+            "support_style": support_style or existing.get("support_style"),
+        }
     save(memory)
     return memory
 

@@ -1,11 +1,26 @@
 # Alibaba Cloud Function Compute service definition (Serverless Devs format).
-# Deploy with: s deploy -y   (requires `s config add` with an Alibaba Cloud
-# AccessKey configured first — see README.md in this directory).
+# Deploy with: s -t fc-service.yaml deploy -y   (requires `s config add` with
+# an Alibaba Cloud AccessKey configured first — see README.md).
 #
 # This is the "Proof of Alibaba Cloud Deployment" artifact required by the
 # hackathon rules: it defines the backend (Agent Firewall + Memory Store +
 # Qwen Cloud client, src/main.py) as an Alibaba Cloud Function Compute
 # service, fronted by an HTTP trigger.
+#
+# Custom Runtime mode: FC proxies HTTP to our own uvicorn process on caPort.
+# Dependencies are vendored into vendor/ (Linux wheels, see build.sh) rather
+# than relying on a Docker build step.
+#
+# NOTE: fc3 component v0.1.22 validates functionName/runtime/triggers etc.
+# at the PROPS ROOT, not nested under function:/triggers: sub-keys (despite
+# what older fc3 docs/examples show) — confirmed via schema.json validation
+# errors during deploy.
+#
+# QWEN_CLOUD_API_KEY is intentionally NOT set here — set as a plain
+# environment variable persisted in Alibaba Cloud FC's console is a real
+# storage-location decision the founder needs to explicitly approve. Set it
+# post-deploy via the FC console or `s cli fc3 function update`, or update
+# this template once approved.
 
 edition: 3.0.0
 name: emma-memoryagent
@@ -20,21 +35,21 @@ resources:
       service:
         name: emma-memoryagent-svc
         internetAccess: true
-      function:
-        name: emma-memoryagent-api
-        handler: src.main.app
-        runtime: python3.10
-        codeUri: ../../
-        memorySize: 512
-        timeout: 30
-        environmentVariables:
-          QWEN_CLOUD_MODEL: qwen-plus
-          # QWEN_CLOUD_API_KEY is injected via Alibaba Cloud Secrets Manager /
-          # function environment variable at deploy time, never committed here.
+      functionName: emma-memoryagent-api
+      runtime: custom.debian10
+      caPort: 9000
+      code: ../../
+      memorySize: 1024
+      cpu: 1
+      diskSize: 512
+      timeout: 60
+      instanceConcurrency: 10
+      environmentVariables:
+        QWEN_CLOUD_MODEL: qwen-plus
       triggers:
-        - name: httpTrigger
-          type: http
-          config:
+        - triggerName: httpTrigger
+          triggerType: http
+          triggerConfig:
             authType: anonymous
             methods:
               - GET

@@ -11,12 +11,13 @@
     --panel-2: #161e29;
     --border: #23303f;
     --text: #e6edf3;
-    --muted: #8b98a5;
+    --muted: #9aa7b3;
     --blue: #4f8cff;
     --green: #34d399;
     --red: #f87171;
     --amber: #fbbf24;
     --violet: #a78bfa;
+    --pink: #f472b6;
   }
   * { box-sizing: border-box; }
   body {
@@ -25,19 +26,20 @@
     color: var(--text);
     font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
     min-height: 100vh;
+    font-size: 16px;
   }
   header {
-    padding: 20px 28px;
+    padding: 22px 30px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header h1 { font-size: 21px; margin: 0; font-weight: 700; }
   header .badges { display: flex; gap: 8px; }
   .badge {
-    font-size: 11px;
-    padding: 4px 10px;
+    font-size: 12px;
+    padding: 5px 12px;
     border-radius: 999px;
     border: 1px solid var(--border);
     color: var(--muted);
@@ -46,54 +48,73 @@
   main {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    padding: 24px 28px;
-    max-width: 1200px;
+    gap: 22px;
+    padding: 26px 30px;
+    max-width: 1240px;
     margin: 0 auto;
   }
   .panel {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 14px;
+    padding: 22px;
   }
   .panel h2 {
-    font-size: 13px;
+    font-size: 15px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     color: var(--muted);
-    margin: 0 0 14px;
+    margin: 0 0 16px;
+    font-weight: 700;
   }
-  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 5px; }
   input[type=text], textarea, select {
     width: 100%;
     background: var(--panel-2);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 9px;
     color: var(--text);
-    padding: 10px 12px;
-    font-size: 14px;
+    padding: 11px 13px;
+    font-size: 15px;
     font-family: inherit;
   }
-  textarea { resize: vertical; min-height: 70px; }
+  textarea { resize: vertical; min-height: 74px; }
   button {
-    margin-top: 16px;
+    margin-top: 18px;
     width: 100%;
     background: var(--blue);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 9px;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
   }
   button:disabled { opacity: 0.5; cursor: default; }
-  .verdict {
-    margin-top: 18px;
+  .seed-panel {
+    border: 1px dashed #3a4a5c;
     border-radius: 10px;
     padding: 14px 16px;
-    font-size: 13px;
+    margin-bottom: 18px;
+    background: rgba(167,139,250,0.05);
+  }
+  .seed-panel .tag {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--violet);
+    font-weight: 700;
+  }
+  .seed-panel p { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+  .seed-panel .row { display: flex; gap: 10px; margin-top: 10px; }
+  .seed-panel .row input { font-size: 14px; padding: 9px 11px; }
+  .seed-panel button { background: var(--violet); margin-top: 10px; padding: 10px; font-size: 13px; }
+  .verdict {
+    margin-top: 20px;
+    border-radius: 11px;
+    padding: 16px 18px;
+    font-size: 15px;
     border: 1px solid var(--border);
     display: none;
   }
@@ -103,81 +124,107 @@
   .verdict .tag {
     display: inline-block;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+    margin-bottom: 8px;
+    font-size: 15px;
   }
   .verdict.allowed .tag { color: var(--green); }
   .verdict.blocked .tag { color: var(--red); }
   .flag {
     display: inline-block;
-    font-size: 11px;
+    font-size: 12px;
     background: rgba(251,191,36,0.15);
     color: var(--amber);
     border: 1px solid rgba(251,191,36,0.35);
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 999px;
     margin: 4px 6px 0 0;
   }
   .retrieved-box {
-    margin-top: 12px;
+    margin-top: 14px;
     background: rgba(167,139,250,0.1);
     border: 1px solid rgba(167,139,250,0.4);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 13px;
+    border-radius: 9px;
+    padding: 12px 16px;
+    font-size: 14.5px;
     color: var(--violet);
+    line-height: 1.5;
   }
   .retrieved-box b { color: #d8ceff; }
-  .reply-box {
-    margin-top: 12px;
-    background: var(--panel-2);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 14px;
+  .adapt-box {
+    margin-top: 10px;
+    background: rgba(244,114,182,0.1);
+    border: 1px solid rgba(244,114,182,0.4);
+    border-radius: 9px;
+    padding: 12px 16px;
+    font-size: 14.5px;
+    color: var(--pink);
     line-height: 1.5;
+  }
+  .adapt-box b { color: #ffd6ec; }
+  .reply-box {
+    margin-top: 14px;
+    background: var(--panel-2);
+    border-radius: 9px;
+    padding: 15px 17px;
+    font-size: 16px;
+    line-height: 1.6;
     white-space: pre-wrap;
   }
   .topic-row {
     background: var(--panel-2);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 6px;
-    font-size: 13px;
+    border-radius: 9px;
+    padding: 12px 14px;
+    margin-bottom: 7px;
+    font-size: 14.5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-left: 3px solid var(--border);
+    border-left: 4px solid var(--border);
   }
   .topic-row.in-budget { border-left-color: var(--green); }
-  .topic-row.out-budget { border-left-color: var(--muted); opacity: 0.55; }
-  .topic-row .name { font-weight: 600; }
-  .topic-row .meta { color: var(--muted); font-size: 11px; }
+  .topic-row.out-budget { border-left-color: var(--muted); opacity: 0.6; }
+  .topic-row .name { font-weight: 700; }
+  .topic-row .meta { color: var(--muted); font-size: 12px; }
   .status-pill {
-    font-size: 10px;
-    padding: 2px 8px;
+    font-size: 11px;
+    padding: 3px 9px;
     border-radius: 999px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+    font-weight: 700;
   }
   .status-started { background: rgba(79,140,255,0.15); color: var(--blue); }
   .status-practicing { background: rgba(251,191,36,0.15); color: var(--amber); }
   .status-mastered { background: rgba(52,211,153,0.15); color: var(--green); }
-  .memory-empty { color: var(--muted); font-size: 13px; font-style: italic; }
-  .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .pref-chip {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin: 0 6px 6px 0;
+  }
+  .pref-chip.interest { background: rgba(244,114,182,0.15); color: var(--pink); border: 1px solid rgba(244,114,182,0.35); }
+  .pref-chip.struggle { background: rgba(251,191,36,0.15); color: var(--amber); border: 1px solid rgba(251,191,36,0.35); }
+  .memory-empty { color: var(--muted); font-size: 14px; font-style: italic; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 5px; }
   .sent-text {
-    margin-top: 10px;
-    font-size: 12px;
+    margin-top: 12px;
+    font-size: 13px;
     color: var(--muted);
     border-left: 2px solid var(--border);
-    padding-left: 10px;
+    padding-left: 12px;
+    line-height: 1.5;
   }
   .sent-text b { color: var(--text); }
   .context-note {
-    margin-top: 14px;
-    font-size: 11px;
+    margin-top: 16px;
+    font-size: 12.5px;
     color: var(--muted);
     border-top: 1px dashed var(--border);
-    padding-top: 10px;
+    padding-top: 12px;
+    line-height: 1.5;
   }
 </style>
 </head>
@@ -194,6 +241,19 @@
 <main>
   <section class="panel">
     <h2>Talk to Emma</h2>
+
+    <div class="seed-panel">
+      <span class="tag">⏮ Simulate prior-session memory</span>
+      <p>Seeds long-term preferences as if learned on a previous day —
+        separate from the live chat below, so adaptation you see later
+        isn't just reading the current message.</p>
+      <div class="row">
+        <input type="text" id="seed-interest" placeholder="Interest, e.g. dinosaurs" />
+        <input type="text" id="seed-struggle" placeholder="Struggle, e.g. visual fractions" />
+      </div>
+      <button id="seed-btn">Save as prior-session memory</button>
+    </div>
+
     <label for="child_id">Child ID (session key)</label>
     <input type="text" id="child_id" value="emma-demo" />
     <div class="hint">Same ID across turns = same persistent memory.</div>
@@ -211,6 +271,7 @@
       <div id="verdict-reason"></div>
       <div id="verdict-flags"></div>
       <div id="retrieved-box" class="retrieved-box" style="display:none"></div>
+      <div id="adapt-box" class="adapt-box" style="display:none"></div>
       <div id="sent-text" class="sent-text"></div>
       <div id="reply" class="reply-box" style="display:none"></div>
     </div>
@@ -218,6 +279,9 @@
 
   <section class="panel">
     <h2>What Emma Remembers (structured, not chat history)</h2>
+
+    <div id="pref-chips" style="margin-bottom: 4px"></div>
+
     <ul id="topic-list" style="list-style:none; padding:0; margin:0">
       <li class="memory-empty">none yet</li>
     </ul>
@@ -228,7 +292,7 @@
       limited context window," not dump everything.
     </div>
 
-    <label style="margin-top:18px">Praise already given</label>
+    <label style="margin-top:20px">Praise already given</label>
     <ul id="praise-list" style="list-style:none; padding:0; margin:0"><li class="memory-empty">none yet</li></ul>
 
     <button id="refresh-memory" style="background:#23303f">Refresh memory</button>
@@ -245,6 +309,24 @@ function timeAgo(ts) {
   return Math.round(s/60) + "m ago";
 }
 
+async function seedPreferences() {
+  const child_id = document.getElementById('child_id').value.trim();
+  const interest = document.getElementById('seed-interest').value.trim();
+  const struggle = document.getElementById('seed-struggle').value.trim();
+  if (!interest && !struggle) return;
+  await fetch(`${API}/memory/${encodeURIComponent(child_id)}/preferences`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      interests: interest ? [interest] : [],
+      struggles_with: struggle ? [struggle] : [],
+    }),
+  });
+  document.getElementById('seed-interest').value = "";
+  document.getElementById('seed-struggle').value = "";
+  refreshMemory();
+}
+
 async function sendMessage() {
   const child_id = document.getElementById('child_id').value.trim();
   const message = document.getElementById('message').value.trim();
@@ -258,6 +340,7 @@ async function sendMessage() {
   const reasonEl = document.getElementById('verdict-reason');
   const flagsEl = document.getElementById('verdict-flags');
   const retrievedEl = document.getElementById('retrieved-box');
+  const adaptEl = document.getElementById('adapt-box');
   const sentTextEl = document.getElementById('sent-text');
   const replyEl = document.getElementById('reply');
 
@@ -272,6 +355,7 @@ async function sendMessage() {
     flagsEl.innerHTML = "";
     sentTextEl.innerHTML = "";
     retrievedEl.style.display = "none";
+    adaptEl.style.display = "none";
     replyEl.style.display = "none";
 
     if (res.status === 403) {
@@ -292,6 +376,13 @@ async function sendMessage() {
       if (body.retrieved_topic) {
         retrievedEl.style.display = "block";
         retrievedEl.innerHTML = `🧠 <b>Retrieved from memory:</b> "${body.retrieved_topic}" (status: ${body.retrieved_status}) — no topic was named this turn, Emma looked it up and adapted the answer around it.`;
+      }
+      if (body.preferences_used && (body.preferences_used.interests.length || body.preferences_used.struggles_with.length)) {
+        adaptEl.style.display = "block";
+        const parts = [];
+        if (body.preferences_used.interests.length) parts.push(`interest: ${body.preferences_used.interests.join(', ')}`);
+        if (body.preferences_used.struggles_with.length) parts.push(`struggle: ${body.preferences_used.struggles_with.join(', ')}`);
+        adaptEl.innerHTML = `🎯 <b>Long-term preference applied:</b> ${parts.join(' · ')} — used to shape this answer, not mentioned in the message.`;
       }
       sentTextEl.innerHTML = `<b>Text sent to Qwen Cloud (post-firewall):</b><br>${body.redacted_text}<br><br><b>Context topics sent this turn:</b> ${body.context_topics_sent.join(', ') || 'none'}`;
       replyEl.style.display = "block";
@@ -316,6 +407,21 @@ async function refreshMemory() {
     const body = await res.json();
     const topicList = document.getElementById('topic-list');
     const praiseList = document.getElementById('praise-list');
+    const prefChips = document.getElementById('pref-chips');
+
+    prefChips.innerHTML = "";
+    const interests = (body.preferences && body.preferences.interests) || [];
+    const struggles = (body.preferences && body.preferences.struggles_with) || [];
+    interests.forEach(i => {
+      const span = document.createElement('span');
+      span.className = 'pref-chip interest'; span.textContent = '❤ ' + i;
+      prefChips.appendChild(span);
+    });
+    struggles.forEach(s => {
+      const span = document.createElement('span');
+      span.className = 'pref-chip struggle'; span.textContent = '⚠ ' + s;
+      prefChips.appendChild(span);
+    });
 
     const entries = Object.entries(body.topics);
     topicList.innerHTML = "";
@@ -353,6 +459,7 @@ async function refreshMemory() {
 
 document.getElementById('send').addEventListener('click', sendMessage);
 document.getElementById('refresh-memory').addEventListener('click', refreshMemory);
+document.getElementById('seed-btn').addEventListener('click', seedPreferences);
 document.getElementById('child_id').addEventListener('change', refreshMemory);
 refreshMemory();
 </script>

@@ -29,6 +29,25 @@ class ChatRequest(BaseModel):
     message: str
     action: str = "answer"
     topic: str | None = None
+    skill: str | None = None
+    homework_mode: bool = False
+
+
+class PreferencesUpdate(BaseModel):
+    """Seeds long-term preferences, as if learned in a prior session.
+
+    Kept as a separate endpoint from /chat on purpose: in the demo this
+    represents established memory from a previous day, not something the
+    model just read out of the current message.
+    """
+
+    interests: list[str] = []
+    struggles_with: list[str] = []
+
+
+class PreferencesUsed(BaseModel):
+    interests: list[str]
+    struggles_with: list[str]
 
 
 class ChatResponse(BaseModel):
@@ -38,7 +57,11 @@ class ChatResponse(BaseModel):
     redacted_text: str
     retrieved_topic: str | None
     retrieved_status: str | None
+    retrieved_skill: str | None
+    retrieved_support_style: str | None
     context_topics_sent: list[str]
+    preferences_used: PreferencesUsed
+    support_style: str | None
 
 
 class TopicRecord(BaseModel):
@@ -46,6 +69,8 @@ class TopicRecord(BaseModel):
     first_seen: float
     last_seen: float
     in_context_budget: bool
+    skill: str | None = None
+    support_style: str | None = None
 
 
 class MemoryResponse(BaseModel):
@@ -64,10 +89,22 @@ topics are stored but intentionally left out of this prompt to keep context
 tight):
 {context_lines}
 
+{homework_instruction}
+
 {retrieval_instruction}
 
-Known preferences for this child: {preferences}
+{preferences_instruction}
 """
+
+HOMEWORK_INSTRUCTION = (
+    "This is homework help. Do NOT give the direct final answer. Guide the "
+    "child with hints and reasoning questions instead — ask what they notice, "
+    "what they'd try first, what a similar simpler case looks like. Only "
+    "confirm correctness after the child attempts it themselves. This is a "
+    "'hints, not answers' policy — it is a support_style stored in memory, "
+    "not a one-off instruction, so keep using it on this topic going forward "
+    "even if not repeated."
+)
 
 
 def _format_context_lines(memory: memory_store.ChildMemory, context_topics: list[str]) -> str:
@@ -76,7 +113,34 @@ def _format_context_lines(memory: memory_store.ChildMemory, context_topics: list
     lines = []
     for t in context_topics:
         rec = memory.topics[t]
-        lines.append(f"- {t}: status={rec['status']}")
+        extra = []
+        if rec.get("skill"):
+            extra.append(f"skill={rec['skill']}")
+        if rec.get("support_style"):
+            extra.append(f"support_style={rec['support_style']}")
+        extra_str = (", " + ", ".join(extra)) if extra else ""
+        lines.append(f"- {t}: status={rec['status']}{extra_str}")
+    return "\n".join(lines)
+
+
+def _format_preferences_instruction(preferences: dict) -> str:
+    interests = preferences.get("interests", [])
+    struggles = preferences.get("struggles_with", [])
+    if not interests and not struggles:
+        return "No long-term preferences known yet for this child."
+
+    lines = ["Long-term preferences known for this child (from prior sessions):"]
+    if interests:
+        lines.append(
+            f"- Interests: {', '.join(interests)}. Weave these into examples "
+            f"UNPROMPTED, even if the child's current message doesn't mention them."
+        )
+    if struggles:
+        lines.append(
+            f"- Known struggle areas: {', '.join(struggles)}. Adapt your teaching "
+            f"approach away from that struggle (e.g. if the struggle is visual "
+            f"fractions, prefer a verbal/step-by-step approach over diagrams)."
+        )
     return "\n".join(lines)
 
 
@@ -96,34 +160,51 @@ def chat(req: ChatRequest) -> ChatResponse:
     target_topic = req.topic
     retrieved_topic = None
     retrieved_status = None
+    retrieved_skill = None
+    retrieved_support_style = None
     if not target_topic:
         recent = memory.most_recent_topic()
         if recent:
             target_topic = recent
             retrieved_topic = recent
             retrieved_status = memory.topics[recent]["status"]
+            retrieved_skill = memory.topics[recent].get("skill")
+            retrieved_support_style = memory.topics[recent].get("support_style")
 
     already_covered = bool(target_topic and memory.has_covered(target_topic))
+
+    # support_style: explicit on this turn (homework_mode), or inherited from
+    # what's already stored for the retrieved/named topic — a "hints, not
+    # answers" policy set once keeps applying without needing to be repeated.
+    existing_style = memory.topics.get((target_topic or "").lower(), {}).get("support_style")
+    support_style = "hints_not_answers" if req.homework_mode else (retrieved_support_style or existing_style)
 
     retrieval_instruction = ""
     if retrieved_topic:
         retrieval_instruction = (
             f"The child did not name a topic this turn. Their most recent topic was "
-            f"'{retrieved_topic}' (status: {retrieved_status}). Continue with that topic and "
-            f"adapt the difficulty to its status — e.g. a fresh follow-up exercise if "
-            f"'practicing', a light recap if 'started'."
+            f"'{retrieved_topic}' (status: {retrieved_status}"
+            + (f", skill: {retrieved_skill}" if retrieved_skill else "")
+            + f"). Continue with that topic and adapt the difficulty to its status — "
+            f"e.g. a fresh follow-up exercise if 'practicing', a light recap if 'started'. "
+            f"Instead of starting from zero, continue from what the child already practiced."
         )
+
+    homework_instruction = HOMEWORK_INSTRUCTION if support_style == "hints_not_answers" else ""
 
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
         context_lines=_format_context_lines(memory, context_topics),
+        homework_instruction=homework_instruction,
         retrieval_instruction=retrieval_instruction,
-        preferences=memory.preferences or "none recorded",
+        preferences_instruction=_format_preferences_instruction(memory.preferences),
     )
 
     reply = qwen_client.chat(system_prompt, firewall_result.redacted_text)
 
     if target_topic:
-        memory_store.record_topic_covered(req.child_id, target_topic)
+        memory_store.record_topic_covered(
+            req.child_id, target_topic, skill=req.skill, support_style=support_style
+        )
 
     return ChatResponse(
         reply=reply,
@@ -132,8 +213,30 @@ def chat(req: ChatRequest) -> ChatResponse:
         redacted_text=firewall_result.redacted_text,
         retrieved_topic=retrieved_topic,
         retrieved_status=retrieved_status,
+        retrieved_skill=retrieved_skill,
+        retrieved_support_style=retrieved_support_style,
         context_topics_sent=context_topics,
+        preferences_used=PreferencesUsed(
+            interests=memory.preferences.get("interests", []),
+            struggles_with=memory.preferences.get("struggles_with", []),
+        ),
+        support_style=support_style,
     )
+
+
+@app.put("/memory/{child_id}/preferences", response_model=MemoryResponse)
+def set_preferences(child_id: str, prefs: PreferencesUpdate) -> MemoryResponse:
+    memory = memory_store.load(child_id)
+    interests = memory.preferences.setdefault("interests", [])
+    for i in prefs.interests:
+        if i not in interests:
+            interests.append(i)
+    struggles = memory.preferences.setdefault("struggles_with", [])
+    for s in prefs.struggles_with:
+        if s not in struggles:
+            struggles.append(s)
+    memory_store.save(memory)
+    return get_memory(child_id)
 
 
 @app.get("/memory/{child_id}", response_model=MemoryResponse)

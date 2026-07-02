@@ -1,0 +1,10 @@
+.venv/
+.git/
+.pytest_cache/
+tests/
+data/
+__pycache__/
+*.pyc
+.alibaba-env
+env
+.env

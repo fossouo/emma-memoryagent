@@ -65,7 +65,8 @@ transport is a change to one file, not a redesign.
 | Component | Status |
 |---|---|
 | Agent Firewall (PII redaction, content policy, action gate) | Implemented |
-| Memory Store (SQLite, per-child) | Implemented |
-| Qwen Cloud client | Implemented, needs live-account endpoint confirmation |
-| Alibaba Cloud deployment | Scaffolded (`deploy/alibaba/`), not yet deployed — pending Alibaba Cloud account provisioning |
-| Demo video | Not started |
+| Memory Store (SQLite, per-child, structured: status/skill/support_style) | Implemented |
+| Qwen Cloud client | Implemented, verified against the live API |
+| Homework mode ("hints, not answers" support_style) | Implemented |
+| Alibaba Cloud deployment | **LIVE**: `https://emma-megent-api-uywwrebxfc.eu-west-1.fcapp.run` (custom.debian10 runtime, bundled Python 3.10, see `deploy/alibaba/README.md`) |
+| Demo video | In progress |

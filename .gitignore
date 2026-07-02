@@ -9,3 +9,6 @@ venv/
 .DS_Store
 data/
 .pytest_cache/
+vendor/
+python-runtime/
+.s/

@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$HERE"
+export PYTHONPATH="$HERE/vendor:$PYTHONPATH"
+exec "$HERE/python-runtime/bin/python3.10" -m uvicorn src.main:app --host 0.0.0.0 --port 9000
