@@ -1,0 +1,41 @@
+# Alibaba Cloud Function Compute service definition (Serverless Devs format).
+# Deploy with: s deploy -y   (requires `s config add` with an Alibaba Cloud
+# AccessKey configured first — see README.md in this directory).
+#
+# This is the "Proof of Alibaba Cloud Deployment" artifact required by the
+# hackathon rules: it defines the backend (Agent Firewall + Memory Store +
+# Qwen Cloud client, src/main.py) as an Alibaba Cloud Function Compute
+# service, fronted by an HTTP trigger.
+
+edition: 3.0.0
+name: emma-memoryagent
+access: default
+
+resources:
+  emma-memoryagent-service:
+    component: fc3
+    props:
+      region: eu-west-1
+      description: "Emma MemoryAgent - Qwen Cloud hackathon backend (Agent Firewall + memory + Qwen Cloud client)"
+      service:
+        name: emma-memoryagent-svc
+        internetAccess: true
+      function:
+        name: emma-memoryagent-api
+        handler: src.main.app
+        runtime: python3.10
+        codeUri: ../../
+        memorySize: 512
+        timeout: 30
+        environmentVariables:
+          QWEN_CLOUD_MODEL: qwen-plus
+          # QWEN_CLOUD_API_KEY is injected via Alibaba Cloud Secrets Manager /
+          # function environment variable at deploy time, never committed here.
+      triggers:
+        - name: httpTrigger
+          type: http
+          config:
+            authType: anonymous
+            methods:
+              - GET
+              - POST
