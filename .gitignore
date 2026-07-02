@@ -1,5 +1,6 @@
 .env
 env
+.alibaba-env
 *.key
 __pycache__/
 *.pyc
