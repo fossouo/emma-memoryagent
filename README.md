@@ -2,10 +2,13 @@
 
 Hackathon entry: **Global AI Hackathon Series with Qwen Cloud** — Track 1: MemoryAgent.
 
-A persistent-memory learning companion for children that remembers each learner's
-progress and preferences across sessions, and refuses to repeat material or praise
-they've already outgrown. Every request passes through an **Agent Firewall**
-(deterministic, pre-model compliance checks) before it ever reaches the LLM.
+A child-safe homework and revision companion that **remembers the child's
+learning state, not just the chat**: which topic, which specific skill, and
+which support style (e.g. "hints, not answers" for homework help that
+guides instead of giving the answer away) — and adapts future exercises
+from that memory instead of starting from zero. Every request passes
+through an **Agent Firewall** (deterministic, pre-model compliance checks)
+before it ever reaches the LLM.
 
 ## Why this exists
 
@@ -31,7 +34,9 @@ choice.
 
 ## Architecture
 
-See [`docs/architecture.md`](docs/architecture.md).
+![Architecture diagram](docs/architecture.png)
+
+See [`docs/architecture.md`](docs/architecture.md) for the full writeup.
 
 ```
 child input ──► Agent Firewall (deterministic, pre-model)
@@ -51,17 +56,19 @@ child input ──► Agent Firewall (deterministic, pre-model)
 
 ## Status
 
-Build in progress for the 2026-07-09 submission deadline. See
-[`docs/architecture.md`](docs/architecture.md) for what's implemented vs.
-planned, and the Devpost project page for the current submission draft.
+Live for the 2026-07-09 submission deadline. See
+[`docs/architecture.md`](docs/architecture.md) for the full implementation
+status, and the Devpost project page for the current submission draft.
 
 ## Deployment
 
-Backend intended to run on Alibaba Cloud. See
+**Live on Alibaba Cloud Function Compute**:
+`https://emma-megent-api-uywwrebxfc.eu-west-1.fcapp.run`
+(`/healthz`, `/demo/`, `/memory/{child_id}` all serving). See
 [`deploy/alibaba/README.md`](deploy/alibaba/README.md) and
 [`deploy/alibaba/fc-service.yaml`](deploy/alibaba/fc-service.yaml) for the
-Alibaba Cloud Function Compute deployment definition (proof-of-deployment
-artifact required by the hackathon rules).
+deployment definition — this is the proof-of-deployment artifact required
+by the hackathon rules.
 
 ## License
 

@@ -1,0 +1,101 @@
+<svg viewBox="0 0 1280 860" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7a8a"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4f8cff"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="860" fill="#0b0f14"/>
+
+  <text x="640" y="46" text-anchor="middle" fill="#e6edf3" font-size="26" font-weight="700">Emma MemoryAgent — Architecture</text>
+  <text x="640" y="72" text-anchor="middle" fill="#9aa7b3" font-size="14">Qwen Cloud Hackathon · Track 1: MemoryAgent</text>
+
+  <!-- Child / client -->
+  <rect x="40" y="140" width="180" height="70" rx="12" fill="#161e29" stroke="#23303f" stroke-width="1.5"/>
+  <text x="130" y="170" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="700">Child (client)</text>
+  <text x="130" y="190" text-anchor="middle" fill="#9aa7b3" font-size="12">web console / app</text>
+
+  <!-- Alibaba Cloud boundary -->
+  <rect x="280" y="110" width="700" height="560" rx="16" fill="none" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="6,5"/>
+  <text x="300" y="135" fill="#f472b6" font-size="14" font-weight="700">Alibaba Cloud — Function Compute (custom.debian10)</text>
+
+  <!-- Agent Firewall -->
+  <rect x="320" y="160" width="620" height="110" rx="12" fill="#161e29" stroke="#f87171" stroke-width="1.5"/>
+  <text x="630" y="188" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="700">Agent Firewall</text>
+  <text x="630" y="210" text-anchor="middle" fill="#9aa7b3" font-size="12.5">deterministic · pre-model · model-independent</text>
+  <text x="345" y="235" fill="#f87171" font-size="12">● content policy</text>
+  <text x="345" y="255" fill="#f87171" font-size="12">● PII redaction</text>
+  <text x="600" y="235" fill="#f87171" font-size="12">● action allow / deny</text>
+  <text x="600" y="255" fill="#f87171" font-size="12">● blocks before Qwen Cloud is called</text>
+
+  <!-- Memory Store -->
+  <rect x="320" y="310" width="300" height="220" rx="12" fill="#161e29" stroke="#34d399" stroke-width="1.5"/>
+  <text x="470" y="338" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="700">Memory Store</text>
+  <text x="470" y="358" text-anchor="middle" fill="#9aa7b3" font-size="12">SQLite, per child_id</text>
+  <text x="342" y="385" fill="#34d399" font-size="12">per topic:</text>
+  <text x="355" y="405" fill="#cdd6e0" font-size="12">status (started/practicing/mastered)</text>
+  <text x="355" y="423" fill="#cdd6e0" font-size="12">skill (specific sub-skill)</text>
+  <text x="355" y="441" fill="#cdd6e0" font-size="12">support_style (e.g. hints_not_answers)</text>
+  <text x="355" y="459" fill="#cdd6e0" font-size="12">first_seen / last_seen</text>
+  <text x="342" y="486" fill="#34d399" font-size="12">top_k_topics(3):</text>
+  <text x="355" y="505" fill="#cdd6e0" font-size="12">bounds what enters the prompt —</text>
+  <text x="355" y="521" fill="#cdd6e0" font-size="12">"recall within a limited context window"</text>
+
+  <!-- Homework policy -->
+  <rect x="650" y="310" width="290" height="140" rx="12" fill="#161e29" stroke="#4f8cff" stroke-width="1.5"/>
+  <text x="795" y="338" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="700">Homework Policy</text>
+  <text x="795" y="358" text-anchor="middle" fill="#9aa7b3" font-size="12">system prompt injection</text>
+  <text x="672" y="384" fill="#4f8cff" font-size="12">homework_mode=true →</text>
+  <text x="672" y="403" fill="#cdd6e0" font-size="12">"hints, not answers" instruction</text>
+  <text x="672" y="425" fill="#cdd6e0" font-size="12">stored as support_style, carries</text>
+  <text x="672" y="443" fill="#cdd6e0" font-size="12">forward without repeating</text>
+
+  <!-- Qwen Cloud client -->
+  <rect x="320" y="560" width="620" height="90" rx="12" fill="#161e29" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="630" y="590" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="700">Qwen Cloud Client</text>
+  <text x="630" y="610" text-anchor="middle" fill="#9aa7b3" font-size="12.5">src/qwen_client.py — the ONLY module aware of Qwen Cloud specifically</text>
+  <text x="630" y="630" text-anchor="middle" fill="#cdd6e0" font-size="12">isolated transport → portable to a future self-hosted Qwen 12B deployment</text>
+
+  <!-- FastAPI runtime box -->
+  <rect x="300" y="145" width="660" height="520" rx="18" fill="none" stroke="#23303f" stroke-width="1" stroke-dasharray="2,4"/>
+  <text x="960" y="165" text-anchor="end" fill="#6b7a8a" font-size="11">src/main.py (FastAPI, bundled Python 3.10)</text>
+
+  <!-- External: Qwen Cloud API -->
+  <rect x="1020" y="565" width="220" height="80" rx="12" fill="#161e29" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="1130" y="598" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="700">Qwen Cloud API</text>
+  <text x="1130" y="618" text-anchor="middle" fill="#9aa7b3" font-size="11.5">model inference (qwen-plus)</text>
+
+  <!-- Arrows -->
+  <path d="M220,175 L318,175" stroke="#6b7a8a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="230" y="167" fill="#6b7a8a" font-size="11">HTTPS</text>
+
+  <path d="M630,270 L630,308" stroke="#6b7a8a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="638" y="293" fill="#6b7a8a" font-size="11">allowed</text>
+
+  <path d="M470,530 L470,558" stroke="#6b7a8a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M620,410 L648,392" stroke="#6b7a8a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <path d="M795,450 L700,558" stroke="#6b7a8a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <path d="M940,605 L1018,605" stroke="#a78bfa" stroke-width="1.5" fill="none" marker-end="url(#arrowBlue)"/>
+  <text x="945" y="596" fill="#a78bfa" font-size="11">redacted text only</text>
+
+  <path d="M630,650 L630,672" stroke="#6b7a8a" stroke-width="1.5" fill="none"/>
+  <path d="M220,175 L130,175" stroke="#6b7a8a" stroke-width="0" fill="none"/>
+
+  <!-- reply back path -->
+  <path d="M130,210 C130,690 300,690 320,624" stroke="#34d399" stroke-width="1.3" fill="none" marker-end="url(#arrow)" stroke-dasharray="3,4"/>
+  <text x="150" y="705" fill="#34d399" font-size="11">reply to child</text>
+
+  <!-- Legend / footer -->
+  <text x="40" y="730" fill="#6b7a8a" font-size="12">Request flow: child input → Agent Firewall (pre-model gate) → Memory Store (retrieve + bound context) → Qwen Cloud → Memory Store (update) → reply</text>
+  <text x="40" y="752" fill="#6b7a8a" font-size="12">Deployment: github.com/fossouo/emma-memoryagent · Live: emma-megent-api-uywwrebxfc.eu-west-1.fcapp.run</text>
+
+  <rect x="40" y="780" width="1200" height="1" fill="#23303f"/>
+  <text x="40" y="810" fill="#9aa7b3" font-size="12" font-weight="700">Why the model call is isolated</text>
+  <text x="40" y="830" fill="#6b7a8a" font-size="11.5">Agent Firewall and Memory Store carry no model-provider assumptions. Swapping Qwen Cloud for a self-hosted Qwen 12B deployment</text>
+  <text x="40" y="847" fill="#6b7a8a" font-size="11.5">is a change to one file (qwen_client.py), not a redesign — the memory + safety layers are the moat, not the model.</text>
+</svg>

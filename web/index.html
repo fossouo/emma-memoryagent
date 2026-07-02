@@ -218,6 +218,42 @@
     line-height: 1.5;
   }
   .sent-text b { color: var(--text); }
+  .homework-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .homework-toggle input { width: auto; }
+  .homework-box {
+    margin-top: 10px;
+    background: rgba(79,140,255,0.1);
+    border: 1px solid rgba(79,140,255,0.4);
+    border-radius: 9px;
+    padding: 12px 16px;
+    font-size: 14.5px;
+    color: var(--blue);
+    line-height: 1.5;
+  }
+  .homework-box b { color: #cfe0ff; }
+  .skill-tag {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .style-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(79,140,255,0.15);
+    color: var(--blue);
+    margin-left: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
   .context-note {
     margin-top: 16px;
     font-size: 12.5px;
@@ -261,8 +297,16 @@
     <label for="topic">Topic (optional — leave blank to let Emma retrieve the most recent one)</label>
     <input type="text" id="topic" placeholder="e.g. fractions — or leave blank" />
 
+    <label for="skill">Skill (optional — the specific sub-skill, not just the topic)</label>
+    <input type="text" id="skill" placeholder="e.g. adding same-denominator fractions" />
+
     <label for="message">Message</label>
     <textarea id="message" placeholder="Ask Emma something...">Can you help me understand fractions?</textarea>
+
+    <label class="homework-toggle">
+      <input type="checkbox" id="homework_mode" style="width:auto; margin-right:8px" />
+      Homework mode — hints, not answers
+    </label>
 
     <button id="send">Send through Agent Firewall</button>
 
@@ -271,6 +315,7 @@
       <div id="verdict-reason"></div>
       <div id="verdict-flags"></div>
       <div id="retrieved-box" class="retrieved-box" style="display:none"></div>
+      <div id="homework-box" class="homework-box" style="display:none"></div>
       <div id="adapt-box" class="adapt-box" style="display:none"></div>
       <div id="sent-text" class="sent-text"></div>
       <div id="reply" class="reply-box" style="display:none"></div>
@@ -331,6 +376,8 @@ async function sendMessage() {
   const child_id = document.getElementById('child_id').value.trim();
   const message = document.getElementById('message').value.trim();
   const topic = document.getElementById('topic').value.trim();
+  const skill = document.getElementById('skill').value.trim();
+  const homework_mode = document.getElementById('homework_mode').checked;
   const btn = document.getElementById('send');
   btn.disabled = true;
   btn.textContent = "Sending...";
@@ -340,6 +387,7 @@ async function sendMessage() {
   const reasonEl = document.getElementById('verdict-reason');
   const flagsEl = document.getElementById('verdict-flags');
   const retrievedEl = document.getElementById('retrieved-box');
+  const homeworkEl = document.getElementById('homework-box');
   const adaptEl = document.getElementById('adapt-box');
   const sentTextEl = document.getElementById('sent-text');
   const replyEl = document.getElementById('reply');
@@ -348,13 +396,14 @@ async function sendMessage() {
     const res = await fetch(`${API}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ child_id, message, topic: topic || null }),
+      body: JSON.stringify({ child_id, message, topic: topic || null, skill: skill || null, homework_mode }),
     });
 
     verdict.classList.add('show');
     flagsEl.innerHTML = "";
     sentTextEl.innerHTML = "";
     retrievedEl.style.display = "none";
+    homeworkEl.style.display = "none";
     adaptEl.style.display = "none";
     replyEl.style.display = "none";
 
@@ -375,7 +424,12 @@ async function sendMessage() {
       });
       if (body.retrieved_topic) {
         retrievedEl.style.display = "block";
-        retrievedEl.innerHTML = `🧠 <b>Retrieved from memory:</b> "${body.retrieved_topic}" (status: ${body.retrieved_status}) — no topic was named this turn, Emma looked it up and adapted the answer around it.`;
+        const skillPart = body.retrieved_skill ? ` · skill: ${body.retrieved_skill}` : '';
+        retrievedEl.innerHTML = `🧠 <b>Retrieved from memory:</b> "${body.retrieved_topic}" (status: ${body.retrieved_status}${skillPart}) — no topic was named this turn, Emma looked it up and adapted the answer around it.`;
+      }
+      if (body.support_style === 'hints_not_answers') {
+        homeworkEl.style.display = "block";
+        homeworkEl.innerHTML = `📚 <b>Support style: hints, not answers.</b> Emma is guiding with questions instead of giving the final answer — this policy is stored in memory and keeps applying on this topic.`;
       }
       if (body.preferences_used && (body.preferences_used.interests.length || body.preferences_used.struggles_with.length)) {
         adaptEl.style.display = "block";
@@ -432,10 +486,13 @@ async function refreshMemory() {
       entries.forEach(([name, rec]) => {
         const li = document.createElement('li');
         li.className = 'topic-row ' + (rec.in_context_budget ? 'in-budget' : 'out-budget');
+        const styleLabel = rec.support_style === 'hints_not_answers' ? 'hints only' : rec.support_style;
         li.innerHTML = `
           <span>
             <span class="name">${name}</span>
             <span class="status-pill status-${rec.status}">${rec.status}</span>
+            ${rec.support_style ? `<span class="style-pill">${styleLabel}</span>` : ''}
+            ${rec.skill ? `<span class="skill-tag">${rec.skill}</span>` : ''}
           </span>
           <span class="meta">${rec.in_context_budget ? 'sent to model' : 'stored only'} · ${timeAgo(rec.last_seen)}</span>
         `;
