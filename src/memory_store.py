@@ -1,9 +1,15 @@
-"""Per-child persistent memory: progress, preferences, anti-repetition ledger.
+"""Per-child persistent memory: structured learning state, not chat history.
 
 Model-agnostic by design — memory state is keyed by child_id, not by which
 model answered a given turn, so swapping the model transport (self-hosted
 Qwen 12B vs. Qwen Cloud API vs. anything else) never resets what Emma
 remembers about a child.
+
+Each topic is stored as a small record (status, first_seen, last_seen), not
+a bare string, so Emma can reason about mastery progression over time and
+bound what gets sent into the model's context window each turn (see
+`top_k_topics` — used by src/main.py to implement "recall critical memories
+within limited context windows" rather than dumping the full history).
 
 Minimal SQLite-backed implementation for the hackathon build. A production
 deployment would use DynamoDB (as Talki's main Emma product does), but
@@ -20,6 +26,8 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "data" / "memory.sqlite3"
 
+STATUS_PROGRESSION = ["started", "practicing", "mastered"]
+
 
 def _connect() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +37,7 @@ def _connect() -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS child_memory (
             child_id TEXT PRIMARY KEY,
             preferences TEXT NOT NULL DEFAULT '{}',
-            covered_topics TEXT NOT NULL DEFAULT '[]',
+            topics TEXT NOT NULL DEFAULT '{}',
             praise_log TEXT NOT NULL DEFAULT '[]',
             updated_at REAL NOT NULL
         )
@@ -42,21 +50,34 @@ def _connect() -> sqlite3.Connection:
 class ChildMemory:
     child_id: str
     preferences: dict = field(default_factory=dict)
-    covered_topics: list[str] = field(default_factory=list)
+    topics: dict = field(default_factory=dict)  # topic -> {status, first_seen, last_seen}
     praise_log: list[str] = field(default_factory=list)
 
     def has_covered(self, topic: str) -> bool:
-        return topic.lower() in {t.lower() for t in self.covered_topics}
+        return topic.lower() in {t.lower() for t in self.topics}
 
     def already_praised(self, achievement: str) -> bool:
         return achievement.lower() in {p.lower() for p in self.praise_log}
+
+    def most_recent_topic(self) -> str | None:
+        if not self.topics:
+            return None
+        return max(self.topics, key=lambda t: self.topics[t]["last_seen"])
+
+    def top_k_topics(self, k: int = 3) -> list[str]:
+        """Bounded recall: the k most recently-touched topics, not the full log.
+
+        This is the "limited context window" behavior — only these get
+        formatted into the model's system prompt (see src/main.py).
+        """
+        return sorted(self.topics, key=lambda t: self.topics[t]["last_seen"], reverse=True)[:k]
 
 
 def load(child_id: str) -> ChildMemory:
     conn = _connect()
     try:
         row = conn.execute(
-            "SELECT preferences, covered_topics, praise_log FROM child_memory WHERE child_id = ?",
+            "SELECT preferences, topics, praise_log FROM child_memory WHERE child_id = ?",
             (child_id,),
         ).fetchone()
     finally:
@@ -65,11 +86,11 @@ def load(child_id: str) -> ChildMemory:
     if row is None:
         return ChildMemory(child_id=child_id)
 
-    preferences, covered_topics, praise_log = row
+    preferences, topics, praise_log = row
     return ChildMemory(
         child_id=child_id,
         preferences=json.loads(preferences),
-        covered_topics=json.loads(covered_topics),
+        topics=json.loads(topics),
         praise_log=json.loads(praise_log),
     )
 
@@ -79,18 +100,18 @@ def save(memory: ChildMemory) -> None:
     try:
         conn.execute(
             """
-            INSERT INTO child_memory (child_id, preferences, covered_topics, praise_log, updated_at)
+            INSERT INTO child_memory (child_id, preferences, topics, praise_log, updated_at)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(child_id) DO UPDATE SET
                 preferences = excluded.preferences,
-                covered_topics = excluded.covered_topics,
+                topics = excluded.topics,
                 praise_log = excluded.praise_log,
                 updated_at = excluded.updated_at
             """,
             (
                 memory.child_id,
                 json.dumps(memory.preferences),
-                json.dumps(memory.covered_topics),
+                json.dumps(memory.topics),
                 json.dumps(memory.praise_log),
                 time.time(),
             ),
@@ -101,9 +122,22 @@ def save(memory: ChildMemory) -> None:
 
 
 def record_topic_covered(child_id: str, topic: str) -> ChildMemory:
+    """Write or update structured learning state for a topic.
+
+    First time: status="started". Each subsequent turn on the same topic
+    advances status one step (started -> practicing -> mastered) — this is
+    the "memory update over time" behavior, not just an append-only log.
+    """
     memory = load(child_id)
-    if not memory.has_covered(topic):
-        memory.covered_topics.append(topic)
+    now = time.time()
+    key = topic.lower()
+    existing = memory.topics.get(key)
+    if existing is None:
+        memory.topics[key] = {"status": "started", "first_seen": now, "last_seen": now}
+    else:
+        idx = STATUS_PROGRESSION.index(existing["status"])
+        new_status = STATUS_PROGRESSION[min(idx + 1, len(STATUS_PROGRESSION) - 1)]
+        memory.topics[key] = {**existing, "status": new_status, "last_seen": now}
     save(memory)
     return memory
 

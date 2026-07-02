@@ -16,6 +16,7 @@
     --green: #34d399;
     --red: #f87171;
     --amber: #fbbf24;
+    --violet: #a78bfa;
   }
   * { box-sizing: border-box; }
   body {
@@ -117,6 +118,16 @@
     border-radius: 999px;
     margin: 4px 6px 0 0;
   }
+  .retrieved-box {
+    margin-top: 12px;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--violet);
+  }
+  .retrieved-box b { color: #d8ceff; }
   .reply-box {
     margin-top: 12px;
     background: var(--panel-2);
@@ -126,16 +137,31 @@
     line-height: 1.5;
     white-space: pre-wrap;
   }
-  .memory-list { list-style: none; padding: 0; margin: 0; }
-  .memory-list li {
+  .topic-row {
     background: var(--panel-2);
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 10px 12px;
     margin-bottom: 6px;
     font-size: 13px;
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    border-left: 3px solid var(--border);
   }
+  .topic-row.in-budget { border-left-color: var(--green); }
+  .topic-row.out-budget { border-left-color: var(--muted); opacity: 0.55; }
+  .topic-row .name { font-weight: 600; }
+  .topic-row .meta { color: var(--muted); font-size: 11px; }
+  .status-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-started { background: rgba(79,140,255,0.15); color: var(--blue); }
+  .status-practicing { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .status-mastered { background: rgba(52,211,153,0.15); color: var(--green); }
   .memory-empty { color: var(--muted); font-size: 13px; font-style: italic; }
   .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
   .sent-text {
@@ -146,6 +172,13 @@
     padding-left: 10px;
   }
   .sent-text b { color: var(--text); }
+  .context-note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+  }
 </style>
 </head>
 <body>
@@ -162,11 +195,11 @@
   <section class="panel">
     <h2>Talk to Emma</h2>
     <label for="child_id">Child ID (session key)</label>
-    <input type="text" id="child_id" value="child-demo-1" />
+    <input type="text" id="child_id" value="emma-demo" />
     <div class="hint">Same ID across turns = same persistent memory.</div>
 
-    <label for="topic">Topic (optional — marks this as "covered" in memory)</label>
-    <input type="text" id="topic" placeholder="e.g. fractions" />
+    <label for="topic">Topic (optional — leave blank to let Emma retrieve the most recent one)</label>
+    <input type="text" id="topic" placeholder="e.g. fractions — or leave blank" />
 
     <label for="message">Message</label>
     <textarea id="message" placeholder="Ask Emma something...">Can you help me understand fractions?</textarea>
@@ -177,30 +210,40 @@
       <span id="verdict-tag" class="tag"></span>
       <div id="verdict-reason"></div>
       <div id="verdict-flags"></div>
+      <div id="retrieved-box" class="retrieved-box" style="display:none"></div>
       <div id="sent-text" class="sent-text"></div>
       <div id="reply" class="reply-box" style="display:none"></div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>What Emma Remembers (this child)</h2>
-    <label>Covered topics</label>
-    <ul class="memory-list" id="covered-list"><li class="memory-empty">none yet</li></ul>
-
-    <label>Praise already given</label>
-    <ul class="memory-list" id="praise-list"><li class="memory-empty">none yet</li></ul>
-
-    <div class="hint" style="margin-top:16px">
-      This memory persists in a database keyed by child_id — reload the page and
-      re-fetch to prove it survives a session, independent of which model
-      answered any given turn.
+    <h2>What Emma Remembers (structured, not chat history)</h2>
+    <ul id="topic-list" style="list-style:none; padding:0; margin:0">
+      <li class="memory-empty">none yet</li>
+    </ul>
+    <div class="context-note">
+      Green bar = sent into the model's context this turn (bounded to the 3
+      most recent topics). Grey/dim = stored, but intentionally left out of
+      the prompt to keep context tight — "recall critical memories within a
+      limited context window," not dump everything.
     </div>
+
+    <label style="margin-top:18px">Praise already given</label>
+    <ul id="praise-list" style="list-style:none; padding:0; margin:0"><li class="memory-empty">none yet</li></ul>
+
     <button id="refresh-memory" style="background:#23303f">Refresh memory</button>
   </section>
 </main>
 
 <script>
 const API = ""; // same origin (FastAPI mounts this page under /demo)
+
+function timeAgo(ts) {
+  const s = Math.max(0, Math.round(Date.now()/1000 - ts));
+  if (s < 5) return "just now";
+  if (s < 60) return s + "s ago";
+  return Math.round(s/60) + "m ago";
+}
 
 async function sendMessage() {
   const child_id = document.getElementById('child_id').value.trim();
@@ -214,6 +257,7 @@ async function sendMessage() {
   const tag = document.getElementById('verdict-tag');
   const reasonEl = document.getElementById('verdict-reason');
   const flagsEl = document.getElementById('verdict-flags');
+  const retrievedEl = document.getElementById('retrieved-box');
   const sentTextEl = document.getElementById('sent-text');
   const replyEl = document.getElementById('reply');
 
@@ -227,6 +271,7 @@ async function sendMessage() {
     verdict.classList.add('show');
     flagsEl.innerHTML = "";
     sentTextEl.innerHTML = "";
+    retrievedEl.style.display = "none";
     replyEl.style.display = "none";
 
     if (res.status === 403) {
@@ -238,15 +283,17 @@ async function sendMessage() {
       const body = await res.json();
       verdict.classList.remove('blocked'); verdict.classList.add('allowed');
       tag.textContent = "ALLOWED — Agent Firewall passed";
-      reasonEl.textContent = body.already_covered
-        ? "Note: this topic was already covered for this child — Emma is told not to repeat it."
-        : "";
+      reasonEl.textContent = "";
       (body.flags || []).forEach(f => {
         const span = document.createElement('span');
         span.className = 'flag'; span.textContent = f;
         flagsEl.appendChild(span);
       });
-      sentTextEl.innerHTML = `<b>Text actually sent to Qwen Cloud (post-firewall):</b><br>${body.redacted_text}`;
+      if (body.retrieved_topic) {
+        retrievedEl.style.display = "block";
+        retrievedEl.innerHTML = `🧠 <b>Retrieved from memory:</b> "${body.retrieved_topic}" (status: ${body.retrieved_status}) — no topic was named this turn, Emma looked it up and adapted the answer around it.`;
+      }
+      sentTextEl.innerHTML = `<b>Text sent to Qwen Cloud (post-firewall):</b><br>${body.redacted_text}<br><br><b>Context topics sent this turn:</b> ${body.context_topics_sent.join(', ') || 'none'}`;
       replyEl.style.display = "block";
       replyEl.textContent = body.reply;
     }
@@ -267,16 +314,26 @@ async function refreshMemory() {
   try {
     const res = await fetch(`${API}/memory/${encodeURIComponent(child_id)}`);
     const body = await res.json();
-    const coveredList = document.getElementById('covered-list');
+    const topicList = document.getElementById('topic-list');
     const praiseList = document.getElementById('praise-list');
 
-    coveredList.innerHTML = "";
-    if (body.covered_topics.length === 0) {
-      coveredList.innerHTML = '<li class="memory-empty">none yet</li>';
+    const entries = Object.entries(body.topics);
+    topicList.innerHTML = "";
+    if (entries.length === 0) {
+      topicList.innerHTML = '<li class="memory-empty">none yet</li>';
     } else {
-      body.covered_topics.forEach(t => {
-        const li = document.createElement('li'); li.textContent = t;
-        coveredList.appendChild(li);
+      entries.sort((a, b) => b[1].last_seen - a[1].last_seen);
+      entries.forEach(([name, rec]) => {
+        const li = document.createElement('li');
+        li.className = 'topic-row ' + (rec.in_context_budget ? 'in-budget' : 'out-budget');
+        li.innerHTML = `
+          <span>
+            <span class="name">${name}</span>
+            <span class="status-pill status-${rec.status}">${rec.status}</span>
+          </span>
+          <span class="meta">${rec.in_context_budget ? 'sent to model' : 'stored only'} · ${timeAgo(rec.last_seen)}</span>
+        `;
+        topicList.appendChild(li);
       });
     }
 
