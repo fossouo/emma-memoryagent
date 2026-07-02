@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Emma MemoryAgent — Test Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121821;
+    --panel-2: #161e29;
+    --border: #23303f;
+    --text: #e6edf3;
+    --muted: #8b98a5;
+    --blue: #4f8cff;
+    --green: #34d399;
+    --red: #f87171;
+    --amber: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header .badges { display: flex; gap: 8px; }
+  .badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 24px 28px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .panel h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+  input[type=text], textarea, select {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    margin-top: 16px;
+    width: 100%;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .verdict {
+    margin-top: 18px;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    display: none;
+  }
+  .verdict.show { display: block; }
+  .verdict.allowed { border-color: var(--green); background: rgba(52,211,153,0.08); }
+  .verdict.blocked { border-color: var(--red); background: rgba(248,113,113,0.08); }
+  .verdict .tag {
+    display: inline-block;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .verdict.allowed .tag { color: var(--green); }
+  .verdict.blocked .tag { color: var(--red); }
+  .flag {
+    display: inline-block;
+    font-size: 11px;
+    background: rgba(251,191,36,0.15);
+    color: var(--amber);
+    border: 1px solid rgba(251,191,36,0.35);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin: 4px 6px 0 0;
+  }
+  .reply-box {
+    margin-top: 12px;
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .memory-list { list-style: none; padding: 0; margin: 0; }
+  .memory-list li {
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .memory-empty { color: var(--muted); font-size: 13px; font-style: italic; }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .sent-text {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    border-left: 2px solid var(--border);
+    padding-left: 10px;
+  }
+  .sent-text b { color: var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Emma MemoryAgent — Test Console</h1>
+  <div class="badges">
+    <span class="badge">Track 1: MemoryAgent</span>
+    <span class="badge">Qwen Cloud</span>
+    <span class="badge">Agent Firewall</span>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Talk to Emma</h2>
+    <label for="child_id">Child ID (session key)</label>
+    <input type="text" id="child_id" value="child-demo-1" />
+    <div class="hint">Same ID across turns = same persistent memory.</div>
+
+    <label for="topic">Topic (optional — marks this as "covered" in memory)</label>
+    <input type="text" id="topic" placeholder="e.g. fractions" />
+
+    <label for="message">Message</label>
+    <textarea id="message" placeholder="Ask Emma something...">Can you help me understand fractions?</textarea>
+
+    <button id="send">Send through Agent Firewall</button>
+
+    <div id="verdict" class="verdict">
+      <span id="verdict-tag" class="tag"></span>
+      <div id="verdict-reason"></div>
+      <div id="verdict-flags"></div>
+      <div id="sent-text" class="sent-text"></div>
+      <div id="reply" class="reply-box" style="display:none"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>What Emma Remembers (this child)</h2>
+    <label>Covered topics</label>
+    <ul class="memory-list" id="covered-list"><li class="memory-empty">none yet</li></ul>
+
+    <label>Praise already given</label>
+    <ul class="memory-list" id="praise-list"><li class="memory-empty">none yet</li></ul>
+
+    <div class="hint" style="margin-top:16px">
+      This memory persists in a database keyed by child_id — reload the page and
+      re-fetch to prove it survives a session, independent of which model
+      answered any given turn.
+    </div>
+    <button id="refresh-memory" style="background:#23303f">Refresh memory</button>
+  </section>
+</main>
+
+<script>
+const API = ""; // same origin (FastAPI mounts this page under /demo)
+
+async function sendMessage() {
+  const child_id = document.getElementById('child_id').value.trim();
+  const message = document.getElementById('message').value.trim();
+  const topic = document.getElementById('topic').value.trim();
+  const btn = document.getElementById('send');
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+
+  const verdict = document.getElementById('verdict');
+  const tag = document.getElementById('verdict-tag');
+  const reasonEl = document.getElementById('verdict-reason');
+  const flagsEl = document.getElementById('verdict-flags');
+  const sentTextEl = document.getElementById('sent-text');
+  const replyEl = document.getElementById('reply');
+
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ child_id, message, topic: topic || null }),
+    });
+
+    verdict.classList.add('show');
+    flagsEl.innerHTML = "";
+    sentTextEl.innerHTML = "";
+    replyEl.style.display = "none";
+
+    if (res.status === 403) {
+      const body = await res.json();
+      verdict.classList.remove('allowed'); verdict.classList.add('blocked');
+      tag.textContent = "BLOCKED — Agent Firewall";
+      reasonEl.textContent = `Qwen Cloud was never called. Reason: ${body.detail}`;
+    } else {
+      const body = await res.json();
+      verdict.classList.remove('blocked'); verdict.classList.add('allowed');
+      tag.textContent = "ALLOWED — Agent Firewall passed";
+      reasonEl.textContent = body.already_covered
+        ? "Note: this topic was already covered for this child — Emma is told not to repeat it."
+        : "";
+      (body.flags || []).forEach(f => {
+        const span = document.createElement('span');
+        span.className = 'flag'; span.textContent = f;
+        flagsEl.appendChild(span);
+      });
+      sentTextEl.innerHTML = `<b>Text actually sent to Qwen Cloud (post-firewall):</b><br>${body.redacted_text}`;
+      replyEl.style.display = "block";
+      replyEl.textContent = body.reply;
+    }
+  } catch (e) {
+    verdict.classList.add('show', 'blocked');
+    tag.textContent = "ERROR";
+    reasonEl.textContent = String(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send through Agent Firewall";
+    refreshMemory();
+  }
+}
+
+async function refreshMemory() {
+  const child_id = document.getElementById('child_id').value.trim();
+  if (!child_id) return;
+  try {
+    const res = await fetch(`${API}/memory/${encodeURIComponent(child_id)}`);
+    const body = await res.json();
+    const coveredList = document.getElementById('covered-list');
+    const praiseList = document.getElementById('praise-list');
+
+    coveredList.innerHTML = "";
+    if (body.covered_topics.length === 0) {
+      coveredList.innerHTML = '<li class="memory-empty">none yet</li>';
+    } else {
+      body.covered_topics.forEach(t => {
+        const li = document.createElement('li'); li.textContent = t;
+        coveredList.appendChild(li);
+      });
+    }
+
+    praiseList.innerHTML = "";
+    if (body.praise_log.length === 0) {
+      praiseList.innerHTML = '<li class="memory-empty">none yet</li>';
+    } else {
+      body.praise_log.forEach(t => {
+        const li = document.createElement('li'); li.textContent = t;
+        praiseList.appendChild(li);
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+document.getElementById('send').addEventListener('click', sendMessage);
+document.getElementById('refresh-memory').addEventListener('click', refreshMemory);
+document.getElementById('child_id').addEventListener('change', refreshMemory);
+refreshMemory();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "emma-memoryagent-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/run_dev.sh"],
+      "port": 8000
+    }
+  ]
+}
