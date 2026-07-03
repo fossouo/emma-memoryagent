@@ -2,6 +2,8 @@
 
 Hackathon entry: **Global AI Hackathon Series with Qwen Cloud** — Track 1: MemoryAgent.
 
+**▶ Demo video (2:19):** https://youtu.be/b3sYJfu5DjA
+
 A child-safe homework and revision companion that **remembers the child's
 learning state, not just the chat**: which topic, which specific skill, and
 which support style (e.g. "hints, not answers" for homework help that
