@@ -1,6 +1,9 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 openai==1.51.0
+# httpx pinned: openai 1.51.0 passes proxies= to httpx, which httpx>=0.28
+# removed (TypeError: unexpected keyword 'proxies'). Must stay <0.28.
+httpx==0.27.2
 pydantic==2.9.2
 aiofiles==24.1.0
 exceptiongroup==1.2.2

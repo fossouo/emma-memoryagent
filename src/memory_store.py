@@ -19,12 +19,20 @@ SQLite keeps this repo dependency-free and easy for judges to run locally.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent / "data" / "memory.sqlite3"
+# Writable location for the SQLite store. Defaults to a repo-local `data/`
+# dir for local dev, but is overridable via EMMA_DB_PATH. On serverless
+# runtimes (e.g. Alibaba Cloud Function Compute) the code directory is
+# mounted READ-ONLY, so the deploy sets EMMA_DB_PATH=/tmp/memory.sqlite3
+# (the only writable path). Note: /tmp is per-instance and ephemeral, so
+# cross-instance/cold-start persistence there needs a mounted volume (NAS)
+# in a production deploy — see deploy/alibaba/README.md.
+DB_PATH = Path(os.environ.get("EMMA_DB_PATH", str(Path(__file__).parent.parent / "data" / "memory.sqlite3")))
 
 STATUS_PROGRESSION = ["started", "practicing", "mastered"]
 

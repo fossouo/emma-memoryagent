@@ -64,7 +64,12 @@ status, and the Devpost project page for the current submission draft.
 
 **Live on Alibaba Cloud Function Compute**:
 `https://emma-megent-api-uywwrebxfc.eu-west-1.fcapp.run`
-(`/healthz`, `/demo/`, `/memory/{child_id}` all serving). See
+(`/healthz`, `/demo/`, `/memory/{child_id}`, and `/chat` — the full
+memory-retrieval + homework-hints path against the real Qwen Cloud API —
+all serving). Memory is persisted to SQLite at `/tmp` on the function
+instance (the only writable path in FC's read-only code mount); a
+production deploy would mount a NAS volume for cross-instance persistence.
+See
 [`deploy/alibaba/README.md`](deploy/alibaba/README.md) and
 [`deploy/alibaba/fc-service.yaml`](deploy/alibaba/fc-service.yaml) for the
 deployment definition — this is the proof-of-deployment artifact required

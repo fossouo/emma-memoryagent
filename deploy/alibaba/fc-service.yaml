@@ -16,11 +16,11 @@
 # what older fc3 docs/examples show) — confirmed via schema.json validation
 # errors during deploy.
 #
-# QWEN_CLOUD_API_KEY is intentionally NOT set here — set as a plain
-# environment variable persisted in Alibaba Cloud FC's console is a real
-# storage-location decision the founder needs to explicitly approve. Set it
-# post-deploy via the FC console or `s cli fc3 function update`, or update
-# this template once approved.
+# QWEN_CLOUD_API_KEY is injected at deploy time from the deployer's
+# environment via ${env(...)} — the secret is NEVER stored in this repo.
+# Export it before deploying (read from a local, gitignored key file), e.g.:
+#   export QWEN_CLOUD_API_KEY="$(cat /path/to/keyfile)" && s deploy -y
+# Founder-approved 2026-07-03 to persist as an FC function env var.
 
 edition: 3.0.0
 name: emma-memoryagent
@@ -46,6 +46,9 @@ resources:
       instanceConcurrency: 10
       environmentVariables:
         QWEN_CLOUD_MODEL: qwen-plus
+        QWEN_CLOUD_API_KEY: ${env(QWEN_CLOUD_API_KEY)}
+        # FC mounts the code dir read-only; /tmp is the only writable path.
+        EMMA_DB_PATH: /tmp/memory.sqlite3
       triggers:
         - triggerName: httpTrigger
           triggerType: http
